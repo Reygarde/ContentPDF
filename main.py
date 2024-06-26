@@ -1,7 +1,3 @@
-__import__('pysqlite3')
-import sys
-sys.modules['sqlite3'] = sys.modules.pop('pysqlite3')
-
 import streamlit as st
 import sqlite3
 from langchain import OpenAI
@@ -11,40 +7,35 @@ from langchain.text_splitter import CharacterTextSplitter
 from langchain.vectorstores import FAISS
 from PyPDF2 import PdfReader
 
-# Input .txt file
-# Format file
-# Split file
-# Create embeddings
-# Store embeddings in vector store
-# Input query
-# Run QA chain
-# Output
-
 def generate_response(file, openai_api_key, query):
-    # Format file
-    reader = PdfReader(file)
-    formatted_document = []
-    for page in reader.pages:
-        formatted_document.append(page.extract_text())
-    # Split file
-    text_splitter = CharacterTextSplitter(
-        chunk_size=1000,
-        chunk_overlap=0
-    )
-    docs = text_splitter.create_documents(formatted_document)
-    # Create embeddings
-    embeddings = OpenAIEmbeddings(openai_api_key=openai_api_key)
-    # Load to vector database
-    store = FAISS.from_documents(docs, embeddings)
-    
-    # Create retrieval chain
-    retrieval_chain = RetrievalQA.from_chain_type(
-        llm=OpenAI(temperature=0, openai_api_key=openai_api_key),
-        chain_type="stuff",
-        retriever=store.as_retriever()
-    )
-    # Run chain with query
-    return retrieval_chain.run(query)
+    try:
+        # Format file
+        reader = PdfReader(file)
+        formatted_document = []
+        for page in reader.pages:
+            formatted_document.append(page.extract_text())
+        # Split file
+        text_splitter = CharacterTextSplitter(
+            chunk_size=1000,
+            chunk_overlap=0
+        )
+        docs = text_splitter.create_documents(formatted_document)
+        # Create embeddings
+        embeddings = OpenAIEmbeddings(openai_api_key=openai_api_key)
+        # Load to vector database
+        store = FAISS.from_documents(docs, embeddings)
+        
+        # Create retrieval chain
+        retrieval_chain = RetrievalQA.from_chain_type(
+            llm=OpenAI(temperature=0, openai_api_key=openai_api_key),
+            chain_type="stuff",
+            retriever=store.as_retriever()
+        )
+        # Run chain with query
+        return retrieval_chain.run(query)
+    except Exception as e:
+        st.error(f"An error occurred: {e}")
+        return None
 
 st.set_page_config(
     page_title="Q&A from a long PDF Document"
@@ -85,8 +76,9 @@ with st.form(
                 openai_api_key,
                 query_text
             )
-            result.append(response)
+            if response:
+                result.append(response)
             del openai_api_key
-            
+
 if len(result):
     st.info(result[0])

@@ -1,8 +1,6 @@
 streamlit
 langchain
 langchain-openai
-chromadb
-pysqlite3-binary
 tiktoken
 PyPDF2
 faiss-cpu
