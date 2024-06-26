@@ -1,7 +1,5 @@
 streamlit
 openai
 langchain
-langchain-openai
-tiktoken
 PyPDF2
 faiss-cpu
