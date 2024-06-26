@@ -3,13 +3,12 @@ import sys
 sys.modules['sqlite3'] = sys.modules.pop('pysqlite3')
 
 import streamlit as st
-import chromadb
 import sqlite3
-from langchain_openai import OpenAI
+from langchain import OpenAI
 from langchain.chains import RetrievalQA
 from langchain.embeddings.openai import OpenAIEmbeddings
 from langchain.text_splitter import CharacterTextSplitter
-from langchain_community.vectorstores import FAISS
+from langchain.vectorstores import FAISS
 from PyPDF2 import PdfReader
 
 # Input .txt file
@@ -22,31 +21,29 @@ from PyPDF2 import PdfReader
 # Output
 
 def generate_response(file, openai_api_key, query):
-    #format file
+    # Format file
     reader = PdfReader(file)
     formatted_document = []
     for page in reader.pages:
         formatted_document.append(page.extract_text())
-    #split file
+    # Split file
     text_splitter = CharacterTextSplitter(
         chunk_size=1000,
         chunk_overlap=0
     )
     docs = text_splitter.create_documents(formatted_document)
-    #create embeddings
+    # Create embeddings
     embeddings = OpenAIEmbeddings(openai_api_key=openai_api_key)
-    #load to vector database
-    #store = Chroma.from_documents(texts, embeddings)
-
+    # Load to vector database
     store = FAISS.from_documents(docs, embeddings)
     
-    #create retrieval chain
+    # Create retrieval chain
     retrieval_chain = RetrievalQA.from_chain_type(
         llm=OpenAI(temperature=0, openai_api_key=openai_api_key),
         chain_type="stuff",
         retriever=store.as_retriever()
     )
-    #run chain with query
+    # Run chain with query
     return retrieval_chain.run(query)
 
 st.set_page_config(
@@ -82,7 +79,7 @@ with st.form(
     if submitted and openai_api_key.startswith("sk-"):
         with st.spinner(
             "Wait, please. I am working on it..."
-            ):
+        ):
             response = generate_response(
                 uploaded_file,
                 openai_api_key,
@@ -92,4 +89,4 @@ with st.form(
             del openai_api_key
             
 if len(result):
-    st.info(response)
+    st.info(result[0])
